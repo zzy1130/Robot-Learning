@@ -19,17 +19,19 @@
 | :--- | :--- | :--- | :--- |
 | 1. [PID Control](PID/README.md) | 独立关节 PID 控制 与 计算力矩控制 (Computed Torque Control, CTC) | 2-DOF 垂直双关节机械臂 (2-Link RR Manipulator) | ✅ 已完结 (位置跟踪与模型补偿对比) |
 | 2. [Model Predictive Control (MPC)](MPC/README.md) | 动态矩阵控制 (Dynamic Matrix Control, DMC) | 具有纯时滞的机器人高频防抖云台 (Gimbal Axis with Delay) | ✅ 已完结 (时滞补偿对比与分析) |
-| 3. Deep Reinforcement Learning (DRL) | 深度强化学习控制算法 (e.g. DDPG, SAC) | 待规划 | 📅 待开发 |
-| 4. Imitation Learning (IL) | 模仿学习与行为克隆 (Behavior Cloning) | 待规划 | 📅 待开发 |
+| 3. [Value-Based DRL](value-based_DRL/README.md) | 深度 Q 网络 (DQN) 与 Double Dueling DQN (D3QN) | 离散小车倒立摆 (Discrete Cart-Pole) | ✅ 已完结 (学习曲线与值估计对比) |
+| 4. Policy-Based DRL | 随机策略梯度 (Policy Gradient, e.g. REINFORCE) | 待规划 | 📅 待开发 |
+| 5. Actor-Critic DRL | 近端策略优化 (PPO) 与 软行动者-评论家 (SAC) | 待规划 | 📅 待开发 |
+| 6. Imitation Learning (IL) | 模仿学习与行为克隆 (Behavior Cloning) | 待规划 | 📅 待开发 |
 
 ---
 
 ## 🚀 快速上手说明
 
 ### 1. 运行环境配置
-项目均采用纯 Python (基于 NumPy, Matplotlib) 开发，推荐使用 Python 3.8+ 环境。您可以通过以下命令安装核心依赖：
+项目均采用纯 Python (基于 PyTorch, NumPy, Matplotlib) 开发，推荐使用 Python 3.8+ 环境。您可以通过以下命令安装核心依赖：
 ```bash
-pip install numpy matplotlib
+pip install torch numpy matplotlib
 ```
 
 ### 2. 运行仿真验证
@@ -47,6 +49,13 @@ pip install numpy matplotlib
   ```
   运行结束后会在 `MPC/` 下生成时滞云台跟踪对比图 `trajectory_comparison.png`。
 
+* **运行 Value-Based DRL 分支仿真**：
+  ```bash
+  cd value-based_DRL
+  python simulation.py
+  ```
+  运行结束后会在 `value-based_DRL/` 下生成倒立摆控制与 Q 值对比图 `trajectory_comparison.png`。
+
 ---
 
 ## 📈 项目效果预览
@@ -61,6 +70,12 @@ pip install numpy matplotlib
 在 0.04s 纯通信延时下，传统 PID（红色）极易产生严重的相位滞后和超调振荡；而 DMC 预测控制器（绿色）能够完美前瞻未来的延时响应，实现极速无超调平滑跟踪。
 <p align="center">
   <img src="MPC/trajectory_comparison.png" alt="DMC vs PID Delay" width="550">
+</p>
+
+### DQN 估计偏差 vs Double Dueling DQN (D3QN)
+在离散小车倒立摆控制中，传统 DQN（红色）面临严重的 Q 值过估偏差，导致策略收敛慢且不稳定；而 D3QN（蓝色/绿色）通过动作选择与评估的解耦，能够提供极其理性的 Q 值估计，并以极快的速度收敛到满分控制。
+<p align="center">
+  <img src="value-based_DRL/trajectory_comparison.png" alt="DQN vs D3QN CartPole" width="650">
 </p>
 
 ---
