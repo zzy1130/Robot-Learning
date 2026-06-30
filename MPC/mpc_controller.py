@@ -123,9 +123,8 @@ class DMCController:
         du_k = dU[0, 0]
         self.u += du_k
         
-        # 6. Update predictions including the effect of the new control input increment
-        # Y0(k) = Y0_shifted + A * dU
-        self.Y0 = Y0_shifted + self.A.dot(dU)
+        # 6. Update predictions using only the executed control increment du_k
+        self.Y0 = Y0_shifted + self.a.reshape((self.P, 1)) * du_k
         
         return self.u
         
