@@ -183,3 +183,4 @@ python simulation.py
 *   [dqn_agent.py](file:///Users/zhongzhiyi/Robot-Learning/value-based_DRL/dqn_agent.py)：基于 PyTorch 实现的 DQN 智能体。
 *   [simulation.py](file:///Users/zhongzhiyi/Robot-Learning/value-based_DRL/simulation.py)：训练、画图与对比测试主脚本。
 *   [generate_equations.py](file:///Users/zhongzhiyi/Robot-Learning/value-based_DRL/generate_equations.py)：LaTeX 公式本地预编译脚本。
+*   [references/lec-7.pdf](file:///Users/zhongzhiyi/Robot-Learning/value-based_DRL/references/lec-7.pdf) 与 [references/lec-8.pdf](file:///Users/zhongzhiyi/Robot-Learning/value-based_DRL/references/lec-8.pdf)：UC Berkeley CS285 深度强化学习值函数基础与实践讲义（本章配套参考教材）。
