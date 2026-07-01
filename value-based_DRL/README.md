@@ -21,68 +21,68 @@
 
 ## 2. 倒立摆物理动力学模型
 
-系统的状态空间可以用四维向量表示：*s* = [*x*, *x_dot*, *theta*, *theta_dot*]
+系统的状态空间可以用四维向量表示：*s* = [*x*, *ẋ*, *θ*, *θ̇*]
 *   *x*：小车在轨道上的水平位置。
-*   *x_dot*：小车水平速度。
-*   *theta*：摆杆偏离垂直向上的角度（以弧度为单位，垂直向上为 0，顺时针为正）。
-*   *theta_dot*：摆杆角速度。
+*   *ẋ*：小车水平速度。
+*   *θ*：摆杆偏离垂直向上的角度（以弧度为单位，垂直向上为 0，顺时针为正）。
+*   *θ̇*：摆杆角速度。
 
-设小车质量为 *M*，摆杆质量为 *m*，摆杆半长为 *l*，重力加速度为 *g*，控制输入力为 *F*（在离散控制中，向左推时 *F* = -10N，向右推时 *F* = 10N）。根据拉格朗日力学方程，摆杆的角加速度 *theta_acc*（即 *ddot{theta}*）和小车加速度 *x_acc*（即 *ddot{x}*）满足以下耦合动力学方程：
+设小车质量为 *M*，摆杆质量为 *m*，摆杆半长为 *l*，重力加速度为 *g*，控制输入力为 *F*（在离散控制中，向左推时 *F* = -10N，向右推时 *F* = 10N）。根据拉格朗日力学方程，摆杆的角加速度 *θ̈* 和小车加速度 *ẍ* 满足以下耦合动力学方程：
 
 <p align="center"><img src="images/eq_cartpole_theta_acc.png" width="450"></p>
 
 <p align="center"><img src="images/eq_cartpole_x_acc.png" width="380"></p>
 
-我们在 [cartpole_env.py](file:///Users/zhongzhiyi/Robot-Learning/value-based_DRL/cartpole_env.py) 中，使用 **欧拉积分法 (Euler Integration)** 对该连续动力学模型进行离散时间仿真，采样时间步长 **dt** = 0.02s。
+我们在 [cartpole_env.py](file:///Users/zhongzhiyi/Robot-Learning/value-based_DRL/cartpole_env.py) 中，使用 **欧拉积分法 (Euler Integration)** 对该连续动力学模型进行离散时间仿真，采样时间步长 *Δt* = 0.02s。
 
 ---
 
 ## 3. Value-Based DRL 数学原理
 
 ### 3.1 最优贝尔曼方程 (Bellman Optimality Equation)
-在 MDP 框架下，值函数方法的核心是拟合最优状态-动作值函数 **Q\*(s, a)**，它表示在状态 *s* 执行动作 *a* 后，遵循最优策略所能获得的期望累计折扣回报。**Q\*(s, a)** 满足最优贝尔曼方程：
+在 MDP 框架下，值函数方法的核心是拟合最优状态-动作值函数 *Q*<sup>\*</sup>(*s*, *a*)，它表示在状态 *s* 执行动作 *a* 后，遵循最优策略所能获得的期望累计折扣回报。*Q*<sup>\*</sup>(*s*, *a*) 满足最优贝尔曼方程：
 
 <p align="center"><img src="images/eq_bellman.png" width="480"></p>
 
-其中 *gamma* 为折扣因子。当状态空间和动作空间较小时，我们可以直接使用表格法进行**值迭代 (Value Iteration)**：
-1. 计算右侧期望：**Q(s, a)** = **R(s, a)** + *gamma* **E[V(s')]**
-2. 更新状态价值：**V(s)** = **max_a Q(s, a)**
+其中 *γ* 为折扣因子。当状态空间和动作空间较小时，我们可以直接使用表格法进行**值迭代 (Value Iteration)**：
+1. 计算右侧期望：*Q*(*s*, *a*) = *R*(*s*, *a*) + *γ* *E*[*V*(*s*′)]
+2. 更新状态价值：*V*(*s*) = max<sub>*a*</sub> *Q*(*s*, *a*)
 
 ### 3.2 收缩映射定理与收敛性证明 (Contraction Mapping)
 为什么表格值迭代能够稳定收敛到唯一的全局最优解？这得益于贝尔曼最优算子的**收缩映射 (Contraction Mapping)** 特征。
 
-定义贝尔曼最优算子 **B** 作用于值函数 **V**：
-(**BV**)(*s*) = **max_a** [ **R(s, a)** + *gamma* **sum_s' P(s'|s, a) V(s')** ]
+定义贝尔曼最优算子 **B** 作用于值函数 *V*：
+(**B** *V*)(*s*) = max<sub>*a*</sub> [ *R*(*s*, *a*) + *γ* ∑<sub>*s′*</sub> *P*(*s′*|*s*, *a*)*V*(*s′*) ]
 
-对于任意两个值函数 **V** 和 **V_bar**，在无穷范数（最大值范数）下：
+对于任意两个值函数 *V* 和 *V̅*，在无穷范数（最大值范数）下满足：
 
 <p align="center"><img src="images/eq_contraction.png" width="300"></p>
 
 **证明要点**：
 根据三角不等式，对于每个状态 *s*：
-|(**BV**)(*s*) - (**BV_bar**)(*s*)| = |**max_a** {**R** + *gamma* **sum P V**} - **max_a** {**R** + *gamma* **sum P V_bar**}|
-<= **max_a** | *gamma* **sum P** ( **V(s')** - **V_bar(s')** ) |
-<= *gamma* **max_a sum P** | **V(s')** - **V_bar(s')** |
-由于概率和 **sum P(s'|s, a)** = 1，因此：
-|(**BV**)(*s*) - (**BV_bar**)(*s*)| <= *gamma* **||V - V_bar||_infinity**
-对所有状态取最大值，即得 **||BV - BV_bar||_infinity** <= *gamma* **||V - V_bar||_infinity**。
+|(**B** *V*)(*s*) - (**B** *V̅*)(*s*)| = |max<sub>*a*</sub> {*R* + *γ* ∑ *P* *V*} - max<sub>*a*</sub> {*R* + *γ* ∑ *P* *V̅*}|
+≤ max<sub>*a*</sub> | *γ* ∑ *P* ( *V*(*s′*) - *V̅*(*s′*) ) |
+≤ *γ* max<sub>*a*</sub> ∑ *P* | *V*(*s′*) - *V̅*(*s′*) |
+由于概率和 ∑ *P*(*s′*|*s*, *a*) = 1，因此：
+|(**B** *V*)(*s*) - (**B** *V̅*)(*s*)| ≤ *γ* ||*V* - *V̅*||<sub>∞</sub>
+对所有状态取最大值，即得 ||**B** *V* - **B** *V̅*||<sub>∞</sub> ≤ *γ* ||*V* - *V̅*||<sub>∞</sub>。
 
-因为折扣因子 *gamma* < 1，算子 **B** 是一个收缩映射。根据 **巴拿赫不动点定理 (Banach Fixed-Point Theorem)**，从任意初始值函数 **V_0** 出发，无限次应用算子 **B** 必定会收敛到唯一的固定点 **V\***。
+因为折扣因子 *γ* < 1，算子 **B** 是一个收缩映射。根据 **巴拿赫不动点定理 (Banach Fixed-Point Theorem)**，从任意初始值函数 *V*<sub>0</sub> 出发，无限次应用算子 **B** 必定会收敛到唯一的固定点 *V*<sup>\*</sup>。
 
 ### 3.3 拟合值迭代的非收敛性 (Non-convergence of Fitted Value Iteration)
-当状态空间是连续高维时，我们无法使用表格记录 **V(s)**，必须使用神经网络等函数逼近器。记逼近器参数化值函数空间为 **Omega**（例如所有参数为 *theta* 的神经网络集合）。
+当状态空间是连续高维时，我们无法使用表格记录 *V*(*s*)，必须使用神经网络等函数逼近器。记逼近器参数化值函数空间为 *Ω*（例如所有参数为 *θ* 的神经网络集合）。
 
 拟合值迭代（Fitted Value Iteration, FVI）的更新步骤为：
-1. 计算目标：**y_i** = **max_a** ( **R(s_i, a_i)** + *gamma* **E[V_theta(s'_i)]** )
-2. 参数回归：通过最小化均方误差（L2 损失），将新函数投影（Project）回参数空间 **Omega**。
+1. 计算目标：*y*<sub>*i*</sub> = max<sub>*a*</sub> ( *R*(*s*<sub>*i*</sub>, *a*<sub>*i*</sub>) + *γ* *E*[*V*<sub>*θ*</sub>(*s′*<sub>*i*</sub>)] )
+2. 参数回归：通过最小化均方误差（L2 损失），将新函数投影（Project）回参数空间 *Ω*。
 
-投影算子 **Pi** 定义为：
+投影算子 **Π** 定义为：
 
 <p align="center"><img src="images/eq_projection.png" width="320"></p>
 
-此时，实际的更新算子是 **Pi B**。
-*   虽然贝尔曼算子 **B** 在无穷范数下是收缩映射，且投影算子 **Pi** 在 L2 范数下是收缩映射（因为投影不会增加欧氏距离）。
-*   **致命问题**：由于它们针对的是**不同的范数**（无穷范数 vs L2范数），它们的复合算子 **Pi B** 在任何范数下都**不保证**是收缩映射。
+此时，实际的更新算子是 **ΠB**。
+*   虽然贝尔曼算子 **B** 在无穷范数下是收缩映射，且投影算子 **Π** 在 L2 范数下是收缩映射（因为投影不会增加欧氏距离）。
+*   **致命问题**：由于它们针对的是**不同的范数**（无穷范数 vs L2范数），它们的复合算子 **ΠB** 在任何范数下都**不保证**是收缩映射。
 *   这导致在使用非线性函数逼近器（如深度神经网络）时，Fitted Q-learning 存在极大的**发散与不稳定风险**。
 
 为了解决非收敛和震荡问题，现代 DRL 引入了**经验回放区 (Experience Replay)**和**目标网络 (Target Network)** 来提供平滑的拟合数据流。
@@ -121,33 +121,33 @@ graph TD
 ### 4.1 传统 DQN
 为了在神经网络拟合下稳定训练，DQN 引入了以下两个核心机制：
 1.  **经验回放区 (Replay Buffer)**：打破样本的时间相关性，使随机梯度下降符合 i.i.d. 假设。
-2.  **目标网络 (Target Network)**：参数为 *theta^-* 的慢更新网络，用于计算 TD 目标值，损失函数为：
+2.  **目标网络 (Target Network)**：参数为 *θ*<sup>-</sup> 的慢更新网络，用于计算 TD 目标值，损失函数为：
 
 <p align="center"><img src="images/eq_dqn_loss.png" width="550"></p>
 
 我们在代码中采用了更平滑的 **Polyak 目标网络软更新 (Soft Target Update)**：
-*theta^-* = *tau* *theta* + (1 - *tau*) *theta^-*  (通常取 *tau* = 0.005)
+*θ*<sup>-</sup> = *τ* *θ* + (1 - *τ*) *θ*<sup>-</sup>  (通常取 *τ* = 0.005)
 
 ### 4.2 Q值过估偏差与 Double DQN
-在标准 DQN 中，目标值计算包含一项 **max_a' Q(s', a'; theta^-)**。
-*   **数学直观**：假设对于某个状态 *s'*，所有动作的真实值都是一样的，即真实最优 **Q\*(s', a) = 0**。但由于神经网络存在逼近误差（估计噪声），估计值 **Q(s', a; theta^-)** 会在 0 附近波动（例如有的动作为 0.2，有的动作为 -0.2）。
-*   由于 **max** 操作总是取最大值，计算出来的目标值就会是 **max(估计值) = 0.2 > 0**。随着时间推移，这种正向偏差会通过贝尔曼方程向后传播，导致 Q 值被极大地**高估**。这被称为 **过估偏差 (Overestimation Bias)**。
+在标准 DQN 中，目标值计算包含一项 max<sub>*a′*</sub> *Q*(*s′*, *a′*; *θ*<sup>-</sup>)。
+*   **数学直观**：假设对于某个状态 *s′*，所有动作的真实值都是一样的，即真实最优 *Q*<sup>\*</sup>(*s′*, *a*) = 0。但由于神经网络存在逼近误差（估计噪声），估计值 *Q*(*s′*, *a*; *θ*<sup>-</sup>) 会在 0 附近波动（例如有的动作为 0.2，有的动作为 -0.2）。
+*   由于 **max** 操作总是取最大值，计算出来的目标值就会是 **max(估计值) = 0.2 > 0**。随着时间推移，这种正向偏差会通过贝尔曼方程向后传播，导致 *Q* 值被极大地**高估**。这被称为 **过估偏差 (Overestimation Bias)**。
 
 **Double DQN** 巧妙地将“动作选择”和“值评估”进行解耦，计算目标时改用：
 
 <p align="center"><img src="images/eq_ddqn_target.png" width="480"></p>
 
-*   使用当前在线网络 *theta* 选择使值最大的动作。
-*   使用目标网络 *theta^-* 评估该动作对应的 Q 值。
+*   使用当前在线网络 *θ* 选择使值最大的动作。
+*   使用目标网络 *θ*<sup>-</sup> 评估该动作对应的 *Q* 值。
 *   如果选择动作时的误差与评估时的误差是不相关的，那么过估偏差就会消失。
 
 ### 4.3 Dueling DQN
-Dueling DQN 对网络结构进行了重构。将 Q 值网络分为两个独立的输出头：**状态价值 V(s)** 和 **动作优势度 A(s, a)**。
+Dueling DQN 对网络结构进行了重构。将 *Q* 值网络分为两个独立的输出头：**状态价值 *V*(*s*)** 和 **动作优势度 *A*(*s*, *a*)**。
 其结合公式为：
 
 <p align="center"><img src="images/eq_dueling_q.png" width="550"></p>
 
-*   **物理直观**：在很多状态下，不管选择什么动作，状态本身的好坏是决定性的（比如倒立摆快要倒下时，任何动作的优势差异很小，主要由于位置较差导致 V(s) 极低）。Dueling 架构能够更高效地学习状态价值，无需为每个动作独立学习一套值。
+*   **物理直观**：在很多状态下，不管选择什么动作，状态本身的好坏是决定性的（比如倒立摆快要倒下时，任何动作的优势差异很小，主要由于位置较差导致 *V*(*s*) 极低）。Dueling 架构能够更高效地学习状态价值，无需为每个动作独立学习一套值。
 
 ---
 
@@ -170,17 +170,17 @@ python simulation.py
 1.  **收敛速度与得分曲线 (左图)**：
     *   **D3QN (蓝色)** 展示出了极高的样本效率，在约第 70-80 回合即可实现满分（得分达到 500 步的上限并持续稳定）。
     *   **DQN (红色)** 的收敛速度显著慢于 D3QN，且在训练中后期出现了明显的性能震荡和得分下滑，这正是由不稳定的值估计和过估问题引起的。
-2.  **Q值过估偏差监测 (右图)**：
-    *   **DQN (红色)** 估计的 Q 值一路飙升，在 200 回合时达到了 **63.78**。由于我们设置的 *gamma* = 0.99，即使在满分（500步且每步奖励 1.0）且无限延伸的情况下，理论上的最大累计折扣回报也仅为 **1 / (1 - gamma) = 100**。而 DQN 在其平均得分仅为 100 左右时，估计值就达到了近 64，表现出极强的过估倾向。
-    *   **D3QN (绿色)** 由于引入了 Double DQN 解耦机制，其估计的 Q 值极为平滑和理性，最终稳定在 **50.58** 左右，与系统的真实累计折现回报完美契合。这直接证明了 Double DQN 对过估偏差的抑制作用。
+2.  **\*Q\* 值过估偏差监测 (右图)**：
+    *   **DQN (红色)** 估计的 *Q* 值一路飙升，在 200 回合时达到了 **63.78**。由于我们设置的 *γ* = 0.99，即使在满分（500步且每步奖励 1.0）且无限延伸的情况下，理论上的最大累计折扣回报也仅为 1 / (1 - *γ*) = 100。而 DQN 在其平均得分仅为 100 左右时，估计值就达到了近 64，表现出极强的过估倾向。
+    *   **D3QN (绿色)** 由于引入了 Double DQN 解耦机制，其估计的 *Q* 值极为平滑和理性，最终稳定在 **50.58** 左右，与系统的真实累计折现回报完美契合。这直接证明了 Double DQN 对过估偏差的抑制作用。
 
 ---
 
 ## 6. 如何使用本代码
 
 ### 6.1 核心文件说明
-*   [cartpole_env.py](file:///Users/zhongzhiyi/Robot-Learning/value-based_DRL/cartpole_env.py)：离散小车倒立摆手写仿真环境。
-*   [dqn_agent.py](file:///Users/zhongzhiyi/Robot-Learning/value-based_DRL/dqn_agent.py)：基于 PyTorch 实现的 DQN 智能体。
-*   [simulation.py](file:///Users/zhongzhiyi/Robot-Learning/value-based_DRL/simulation.py)：训练、画图与对比测试主脚本。
-*   [generate_equations.py](file:///Users/zhongzhiyi/Robot-Learning/value-based_DRL/generate_equations.py)：LaTeX 公式本地预编译脚本。
-*   [references/lec-7.pdf](file:///Users/zhongzhiyi/Robot-Learning/value-based_DRL/references/lec-7.pdf) 与 [references/lec-8.pdf](file:///Users/zhongzhiyi/Robot-Learning/value-based_DRL/references/lec-8.pdf)：UC Berkeley CS285 深度强化学习值函数基础与实践讲义（本章配套参考教材）。
+*   [cartpole_env.py](file:///Users/zhongzhiyi/Robot-Learning/value-based_DRL/cartpole_env.py) ：离散小车倒立摆手写仿真环境。
+*   [dqn_agent.py](file:///Users/zhongzhiyi/Robot-Learning/value-based_DRL/dqn_agent.py) ：基于 PyTorch 实现的 DQN 智能体。
+*   [simulation.py](file:///Users/zhongzhiyi/Robot-Learning/value-based_DRL/simulation.py) ：训练、画图与对比测试主脚本。
+*   [generate_equations.py](file:///Users/zhongzhiyi/Robot-Learning/value-based_DRL/generate_equations.py) ：LaTeX 公式本地预编译脚本。
+*   [references/lec-7.pdf](file:///Users/zhongzhiyi/Robot-Learning/value-based_DRL/references/lec-7.pdf) 与 [references/lec-8.pdf](file:///Users/zhongzhiyi/Robot-Learning/value-based_DRL/references/lec-8.pdf) ：UC Berkeley CS285 深度强化学习值函数基础与实践讲义（本章配套参考教材）。
